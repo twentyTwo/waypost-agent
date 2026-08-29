@@ -1,86 +1,75 @@
-# Pipeline Architecture
+# Pipeline architecture
 
-A plain-language map of how this multi-agent pipeline works. For the repo
-owner's future reference.
+Written for a human deciding whether to adopt this, not for an agent at
+session start.
 
-## The idea
+## The shape of it
 
-One repo acts as the **shared memory** for four AI agent roles. The
-agents are not separate programs — they're the same Claude Code / Cowork
-engine, each session loaded with a different **Skill** depending on what
-triggered it. All coordination happens through files in this repo plus
-GitHub Issues and PRs.
-
-## The four roles
-
-1. **Build agent** — writes the application code. Runs in Claude Code
-   (cloud).
-2. **Automated tester** — writes and runs Playwright tests against web
-   flows. Runs in Claude Code (cloud).
-3. **Manual tester** — clicks through the app like a person, using
-   computer use on a VM. Runs in Claude Cowork.
-4. **Marketing agent** — drafts promo content once a feature is shipped
-   and fully passes testing. Runs in Cowork or Claude Code.
-
-## Never block on a human
-
-The owner is often away. So no session ever waits. When an agent needs a
-decision it can't make, it:
-
-1. writes where it stopped into `STATUS.md`,
-2. opens a GitHub Issue with its question (`agent-question` template),
-3. ends the session.
-
-The owner answers the issue whenever they can. A **Routine** sees the
-reply and starts a **fresh** session that rebuilds context from
-`CLAUDE.md` → `STATUS.md` → the issue thread, then continues. Nothing is
-kept running. Full detail: [`resume-protocol.md`](resume-protocol.md).
-
-## Flow
+A human opens an issue. A build agent implements it and labels the PR. Two
+testers — one programmatic, one clicking through a real desktop — check the
+result independently and file reports in the same format. Both must pass.
+Any agent that gets stuck writes down where it stopped, asks in an issue,
+and dies; a later event brings up a fresh session that reads the repo and
+carries on.
 
 ```mermaid
 flowchart TD
-    O([Owner: feature request]) --> B[Build Agent<br/>writes code, opens PR<br/>labels it ready-for-test]
+    H([Human opens an issue]) --> B[Build agent]
+    B -->|PR labeled ready-for-test| AT["Automated tester<br/>Playwright"]
+    AT -->|report all Pass| MT["Manual tester<br/>Cowork, computer use"]
+    AT -->|any Fail| BUG[bug issue]
+    MT -->|any Fail| BUG
+    BUG --> B
+    MT -->|report all Pass| DONE([Both Pass: ready to merge])
 
-    B --> AT[Automated Tester<br/>Playwright E2E<br/>-auto.xlsx + -auto.md]
-    B --> MT[Manual Tester<br/>computer use on VM<br/>-manual.xlsx + -manual.md]
-
-    AT --> R{Both reports<br/>all Pass?}
-    MT --> R
-
-    R -- no --> BUG[Bug issue -> Build Agent fixes] --> B
-    R -- yes, PR merged --> MK[Marketing Agent<br/>drafts /marketing/&lt;feature&gt;/]
-    MK --> O2([Owner reviews marketing PR])
-
-    subgraph LOOP [STATUS.md + Issues loop - touches every stage]
-      S[(STATUS.md)]
-      I[(agent-question<br/>Issues)]
-    end
-
-    B -. blocked .-> I
-    AT -. blocked .-> I
-    MT -. blocked .-> I
-    MK -. blocked .-> I
-    I -. owner replies -> fresh session .-> S
-    S -. read at every session start .-> B
+    B -.blocked.-> ASK
+    AT -.blocked.-> ASK
+    MT -.blocked.-> ASK
+    ASK["ask-and-pause<br/>write /STATUS/role.md<br/>open agent-question issue<br/>END SESSION"]
+    ASK -.->|human replies, hours or days later| RESUME
+    RESUME["Routine starts a FRESH session<br/>reads CLAUDE.md, status file, thread"]
+    RESUME -.-> B
+    RESUME -.-> AT
+    RESUME -.-> MT
 ```
 
-## Key files
+The dotted path touches every stage. It is not an error path — it is the
+normal way a session ends when the answer is not in the repo.
 
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | First read for every session; the rules + role index |
-| `STATUS.md` | Structured live state, one block per role |
-| `.github/ISSUE_TEMPLATE/agent-question.md` | How agents ask the owner |
-| `skills/*/SKILL.md` | Per-role instructions |
-| `qa-runs/` | Test reports (`.xlsx` + `.md`), auto and manual |
-| `marketing/` | Marketing drafts |
-| `docs/resume-protocol.md` | The ask-and-pause / resume mechanic |
-| `docs/routines-setup.md` | How to wire the triggers (done in the UI) |
+## Three ideas hold it together
 
-## Report format (both testers)
+**The repo is the only memory.** Agents share no process and never message
+each other. Everything one needs to know about another's work is a
+committed file: `/STATUS/<role>.md` for state, `/qa-runs/` for results,
+labels for signals. Sessions are disposable; the repo is not.
 
-Identical structure so the two runs compare row-for-row:
-`.xlsx` with a **Results** sheet (Test Case, Steps, Expected, Actual,
-Status, Screenshot Reference) and a **Summary** sheet (pass/fail/blocked
-counts), plus a matching `.md` table as the diffable source of truth.
+**No session ever waits.** A blocked agent records its state and stops,
+rather than holding a session open for a human who may be asleep. This
+costs a cold start on resume and buys immunity to timeouts, disconnects,
+and days of delay. See `resume-protocol.md`.
+
+**Two independent testers, both required.** The build agent wrote the code
+and shaped the tests around it, so a passing automated suite can share the
+author's blind spot. The manual tester looks at the actual screen. Neither
+signs off alone.
+
+## Why one status file per role
+
+Roles write status at unpredictable times, sometimes concurrently. One
+shared file would produce merge conflicts between agents — a class of
+failure with no good automated recovery. Per-role files never contend: each
+role writes only its own, and reads the others.
+
+## Adding roles
+
+The diagram grows by addition. A new role slots in beside the existing ones
+without restructuring anything, because nothing here is coded against a
+fixed set of roles — the `CLAUDE.md` table is the whole registry. See
+`adding-a-new-role.md`.
+
+## What this does not do
+
+- **It does not merge for you.** "Both Pass" is a state, not an action.
+- **It does not schedule work.** A human opens the first issue.
+- **It cannot wire its own triggers.** Routines are UI config, outside the
+  repo — see `routines-setup.md` for that limitation.

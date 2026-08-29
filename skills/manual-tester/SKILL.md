@@ -1,66 +1,77 @@
-# Skill: Manual Tester
+# Skill: Manual tester
 
-You test the built application the way a human would — opening it on a
-desktop and clicking through it. You run in **Claude Cowork on a VM,
-using computer use**, not Claude Code. This repo is still your shared
-memory: read from it and write reports back to it.
+You test the built application the way a person would — on a real desktop,
+by looking and clicking. You run in Claude Cowork with computer use, on a
+VM. This file lives in the repo with every other role's, even though your
+execution surface is different.
 
-## Start of session
+## Trigger
 
-1. Read [`/CLAUDE.md`](../../CLAUDE.md) then [`/STATUS.md`](../../STATUS.md)
-   → `### Manual-Test` block.
-2. If you were dispatched with a specific feature/PR, that PR description
-   is your test plan and spec.
+Dispatched by the repo owner (Cowork Dispatch or a Scheduled Task), **not**
+a Routine. Before testing, verify both conditions hold — the trigger alone
+does not guarantee them:
 
-## Open the application
+1. The PR is labeled `ready-for-test`.
+2. An automated-test report for this feature exists in `/qa-runs/` and its
+   summary is all `Pass`.
 
-- Launch the app on the desktop as a real user would: open the desktop
-  app, or open the browser and go to the running URL given in the PR /
-  dispatch note.
-- If no run instructions or URL are provided, that's a blocker — see below.
+If either is false, record that in `/STATUS/manual-test.md` and end the
+session. Do not test ahead of the automated run — you would be spending
+human-speed effort on failures a machine already found.
 
-## Run the test plan
+## Inputs
 
-- Work through the plan step by step, one flow at a time.
-- Interact like a human tester: click, type, wait for the UI, read what's
-  on screen. Don't shortcut through internals.
-- **Take a screenshot at every significant step** (each screen, each
-  submit, each error). Name them `<TESTID>-<step>.png` and keep them with
-  the report.
-- Use the same test IDs as the automated run when testing the same
-  feature: `<FEATURE>-<NN>`.
+1. `CLAUDE.md` — Project Stack, and how the app is launched.
+2. `/STATUS/manual-test.md`.
+3. The PR and its originating issue.
+4. `/qa-runs/<date>-<feature>-auto.md` — **reuse its test IDs** so the two
+   reports line up case by case.
 
-## Report — identical format to the automated tester
+## Procedure
 
-Save to `/qa-runs/`:
+1. Open the built application on the desktop.
+2. Walk the test plan step by step, at human pace. Screenshot at every
+   significant step, not just failures.
+3. Judge what you actually see on screen — not what the DOM says, not what
+   the automated report concluded. Your value is catching what a passing
+   assertion misses: an invisible element, an unreadable contrast, a
+   layout that breaks, a flow that technically works and feels wrong.
+4. Note usability problems even when nothing is technically broken. Record
+   them as `Pass` with an observation, not `Fail`, unless the issue's
+   acceptance criteria are actually unmet.
+5. Write the report, update `/STATUS/manual-test.md`, end the session.
 
-### `<date>-<feature>-manual.xlsx`  (date = `YYYY-MM-DD`)
-Sheet **Results**:
+## Report / output format
 
-| Test Case | Steps | Expected | Actual | Status | Screenshot Reference |
+Identical in structure to the automated tester's, so the two are directly
+comparable:
 
-`Status` ∈ `Pass` / `Fail` / `Blocked`.
+- `/qa-runs/<date>-<feature>-manual.xlsx` — **Results** sheet with columns
+  `Test Case | Steps | Expected | Actual | Status | Screenshot Reference`;
+  **Summary** sheet with counts, PR number, commit SHA, timestamp.
+- `/qa-runs/<date>-<feature>-manual.md` — the same table, diffable.
 
-Sheet **Summary** — total, Pass, Fail, Blocked, pass rate, feature,
-branch/PR, run timestamp (UTC), `manual`.
+Where a test ID exists in the auto report, use the same ID.
 
-### `<date>-<feature>-manual.md`
-Same test IDs and statuses as a markdown table + one-line summary.
+## Retry ceiling
 
-This is the same structure the automated tester uses
-(`*-auto.xlsx` / `*-auto.md`) so the owner can compare the two runs
-row-for-row.
+**Flaky-click tolerance:** when a step fails, re-run **that single step
+once** before recording a `Fail`. Computer-use misclicks, mistimed waits,
+and misread screens are noise from your own execution, not defects in the
+application. A failure that reproduces on the second attempt is real.
 
-## Push results
+Beyond that, the standard ceiling: three attempts to get the app into a
+testable state, then mark the affected cases `Blocked` and move on.
 
-Commit both files (and the screenshots) into the repo under `/qa-runs/`.
-If you cannot push from the VM, hand the files to the repo owner via the
-Cowork output and note in `STATUS.md` that they're pending upload.
+## Ask-and-pause rule
 
-## When something needs a judgment call
+Stop and ask when a judgment call is genuinely the owner's: the app does
+something the spec never described and you cannot tell whether it is a
+defect or an intended behavior you did not know about.
 
-If a flow is ambiguous, or broken in a way where "is this a bug or
-intended?" needs the owner, follow
-[`/docs/resume-protocol.md`](../../docs/resume-protocol.md): write your
-`STATUS.md` block → open an `agent-question` issue (Role: `manual-test`)
-→ stop. Mark the affected test cases `Blocked` in the report.
+Do not ask about things you can judge — whether a button is hard to find,
+whether an error message reads badly. Record those as observations.
+
+Procedure: update `/STATUS/manual-test.md` (with skill version hash) →
+open or append to the `agent-question` issue with all questions batched →
+end the session.

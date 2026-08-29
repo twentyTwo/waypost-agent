@@ -1,74 +1,56 @@
-# Routines Setup
+# Routines setup
 
-Routines are configured in the **Claude Code UI / settings**, not in this
-repo. This file is the spec for what to create. One Routine per automated
-role. Each Routine's task should begin by following the session-start
-checklist in [`/CLAUDE.md`](../CLAUDE.md).
+One Routine per role, each triggered by a GitHub event. Configured in the
+**Claude Code UI**, not in this repo.
 
-> The `agent-question` template is a classic Markdown template, so "Role"
-> is a text field, not a true dropdown. If you want an enforced dropdown,
-> convert it to a GitHub **Issue Form** (`.github/ISSUE_TEMPLATE/
-> agent-question.yml` with a `dropdown` element). Behavior is otherwise
-> identical; the `needs-human` label still auto-applies.
+> **Limitation, stated plainly:** Routine configuration is not repo config.
+> It cannot be committed, reviewed, versioned, or copied by "Use this
+> template". Every adopter wires these by hand, and a change to a trigger
+> leaves no trace in git. Record any non-obvious choice here in this file
+> so the repo at least documents what the UI is set to.
 
----
+## Build agent
 
-## 1. Build agent Routine
+- **Trigger:** comment added to an open issue labeled `needs-human` where
+  the Role field is `build`.
+- **Task:** follow `skills/build-agent/SKILL.md`, starting from the session
+  checklist in `CLAUDE.md`.
+- **Access:** repo write, issues read/write, pull requests read/write.
 
-- **Trigger:** a comment is added to an open issue that has the
-  `needs-human` label (i.e. any reply on an `agent-question` issue).
-  - Simplest workable form: "new comment on any open issue labeled
-    `needs-human`". The task step then reads the issue's Role field and
-    proceeds only if Role = `build` (or handles whichever role matches —
-    see note below).
-- **Task:** load `skills/build-agent/SKILL.md`, run the resume protocol
-  (`docs/resume-protocol.md` Part C).
+## Automated tester
 
-## 2. Automated-tester Routine
+- **Trigger:** pull request labeled `ready-for-test`.
+- **Task:** follow `skills/automated-tester/SKILL.md`.
+- **Access:** repo write (to commit reports to `/qa-runs/`), issues
+  read/write (to open `bug` issues), PR read/write (to comment).
+- **Also needs:** the Playwright MCP.
 
-- **Trigger:** a PR is labeled `ready-for-test` (label-added event on
-  pull requests targeting `main`).
-- **Task:** load `skills/automated-tester/SKILL.md`, run the tests,
-  write both reports to `/qa-runs/`, comment on the PR, open a `bug`
-  issue on any failure.
-- **Also** reuse this Routine (or a sibling) for the "comment on
-  `needs-human` issue where Role = `auto-test`" resume case.
+## Manual tester — not a Routine
 
-## 3. Marketing Routine
+Runs in Cowork with computer use. Invoke it via **Dispatch** or a
+**Scheduled Task** pointing at `skills/manual-tester/SKILL.md`.
 
-- **Trigger (best available):** a PR is merged to `main`.
-- **Compound condition that can't live in the trigger:** marketing should
-  only run when the PR is merged **AND** both
-  `<date>-<feature>-{auto,manual}.md` exist in `/qa-runs/` **AND** every
-  test case in both is `Pass`.
-  - **Follow-up decision for the owner — do not guess a workaround:**
-    implement this as a lightweight check at the very start of the
-    Routine's task (read `/qa-runs/`, parse the two `.md` reports, exit
-    quietly if the condition isn't met), *or* introduce an explicit
-    `ready-for-marketing` label/gate that something else sets. Flagging
-    this here rather than picking one.
-- **Task:** load `skills/marketing-agent/SKILL.md`.
+The VM must stay awake for the length of a run — a sleeping VM produces a
+half-finished report with no error, which is worse than no report.
 
-## 4. Manual tester — NOT a Routine
+## Compound conditions are not expressible
 
-The manual tester runs in **Claude Cowork** with computer use on a VM.
-It is invoked via Cowork **Dispatch / Scheduled Task**, not a GitHub
-Routine. Trigger it manually (or on a schedule) when a feature is ready
-for human-style testing, pointing it at the feature PR. Skill:
-[`/skills/manual-tester/SKILL.md`](../skills/manual-tester/SKILL.md).
+Some triggers you actually want are not single GitHub events. The clearest
+case: manual test should run when the PR is labeled `ready-for-test` **and**
+the automated report exists **and** it is all `Pass`.
 
----
+GitHub gives you one event. So:
 
-## Routing note
+**Put the rest of the condition in the first step of the task, not in the
+trigger.** Each affected SKILL.md opens with a verification step that
+checks the remaining conditions and ends the session if they do not hold.
+Never assume the trigger firing means the full condition was met.
 
-If per-role triggers on the same "comment on `needs-human` issue" event
-are awkward in the UI, use **one resume Routine** whose task reads the
-issue's Role field first and loads the matching `skills/<role>/SKILL.md`.
-Fewer Routines, one dispatch point.
+This applies to any role you add later. When a new role's real trigger is
+compound, split it: the cheapest event goes in the trigger, everything else
+goes in step 1 of the procedure.
 
-## Cross-cutting requirements
+## Adding a Routine for a new role
 
-- Every Routine needs repo read/write (commit to branches, open issues,
-  comment on PRs) and, for the tester, Playwright MCP.
-- Routines must be able to open issues from the template and apply labels
-  (`needs-human`, `bug`, `ready-for-test`).
+See `adding-a-new-role.md`. Add a section here at the same time — this file
+is the only record of what the UI is configured to do.

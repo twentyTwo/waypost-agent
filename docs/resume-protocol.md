@@ -1,66 +1,76 @@
-# Resume Protocol — ask-and-pause, then resume
+# Resume protocol — ask-and-pause, then resume
 
-The pipeline assumes the human-in-the-loop is often away. Sessions never
-wait. This is the exact mechanic every role follows.
+The mechanic that lets agents run against an absent human. Read this once;
+the rule it produces is in `CLAUDE.md`.
 
-## Part A — an agent gets blocked (ask-and-pause)
+## The problem it solves
 
-A "block" is a decision only the repo owner can make: product behavior,
-stack choice, an external service, ambiguous spec, "bug or intended?".
-A normal bug is **not** a block — report it and keep going.
+An agent that waits for an answer holds a session open for hours or days.
+That session burns budget doing nothing, and dies anyway — on a timeout, a
+disconnect, a restart — losing whatever was only in its context.
 
-When blocked:
+So: **no session ever waits.** A blocked agent writes down everything a
+successor would need, asks, and stops.
 
-1. **Write state to `STATUS.md`.** Update only your role's block:
-   - `Current task` — what you're mid-way through
-   - `Last completed step` — the last thing that is actually done
-   - `State / branch` — branch, PR number, file paths
-   - `Open questions` — will be `#<issue>` once step 2 is done
-   - `Blocked: yes`
-   - `Updated` — ISO 8601 UTC + your role
-2. **Open a GitHub Issue** from `.github/ISSUE_TEMPLATE/agent-question.md`.
-   Fill every field. The template auto-applies the `needs-human` label.
-   Put the issue number back into your `STATUS.md` `Open questions` line.
-3. **Commit** the `STATUS.md` change.
-4. **End the session.** No polling, no sleeping, no waiting loop. Stop.
+## Step 1 — the agent blocks
 
-## Part B — the owner replies
+Not every uncertainty is a block. A block is a decision the human must make
+that changes what gets built, and that cannot be derived from the repo.
+Each role's SKILL.md says what counts for that role.
 
-The owner comments on the issue whenever they are next available. That's
-the only thing they have to do. They may also add labels or edit
-`STATUS.md`, but a comment is enough.
+## Step 2 — the agent records state
 
-## Part C — a fresh session resumes (Routine-triggered)
+Update `/STATUS/<role>.md`:
 
-A Routine (configured in the Claude Code UI — see
-[`routines-setup.md`](routines-setup.md)) listens for the GitHub event
-(a comment on an open `agent-question` / `needs-human` issue) and starts
-a **new** session with the matching role's skill.
+- `## Current` — **overwritten**. Task, last completed step (specific and
+  verifiable), the skill version hash, the open question link, timestamp.
+- `## Changelog` — **one line appended, newest first**. Never edited, never
+  deleted.
 
-**No session is ever kept alive. Every resume is a cold start that
-rebuilds context from this repo.**
+The skill version hash matters: `git log -1 --format=%h -- skills/<role>/SKILL.md`.
+If the SKILL.md changes between the pause and the resume, the successor can
+see that the rules moved under the entry it is reading.
 
-The fresh session's first actions, in order:
+## Step 3 — the agent asks
 
-1. Read [`/CLAUDE.md`](../CLAUDE.md).
-2. Read [`/STATUS.md`](../STATUS.md) — locate the role block with
-   `Blocked: yes` and the `#<issue>` reference.
-3. Read that **issue thread** in full — the original question and the
-   owner's answer.
-4. Read the role's `SKILL.md`.
-5. Check out the branch / PR named in `State / branch`.
-6. Reconstruct context from `Last completed step` + the diff on that
-   branch. Do not redo completed work.
-7. Apply the owner's decision and continue.
-8. Update `STATUS.md`: `Blocked: no`, clear/So-note `Open questions`,
-   new `Last completed step`, new timestamp.
-9. Close the issue (or leave a comment saying it's resolved and let the
-   owner close it — follow whatever convention the repo settles on).
+Open one issue from the `agent-question` template, with **every** question
+accumulated this session as a checklist. If an open question issue for this
+role already exists, comment on it instead of opening a second.
 
-## Invariants
+One issue per session, not one per question. The human answers a batch in
+one sitting; a stream of single-question issues turns one interruption into
+five.
 
-- State lives in the repo, never in a running process.
-- `STATUS.md` is the index; issues hold the detail.
-- One open `agent-question` issue per role at a time. If you'd open a
-  second, you're probably not actually blocked — or the first needs a
-  nudge, not a duplicate.
+## Step 4 — the session ends
+
+Cleanly. No polling, no sleeping, no keeping a turn alive, no "I'll check
+back". The session is over.
+
+## Step 5 — the human replies
+
+Whenever. Minutes or days; the protocol does not care.
+
+## Step 6 — a Routine starts a fresh session
+
+The reply is a GitHub event. A per-role Routine triggers on it
+(`routines-setup.md`) and starts a **new** session — not a continuation.
+Nothing carries over except this repository.
+
+## Step 7 — the fresh session rebuilds context
+
+In this order, before doing anything else:
+
+1. `CLAUDE.md`
+2. `/STATUS/<role>.md` — where the predecessor stopped
+3. The issue thread — the question and the answer
+4. Its own `skills/<role>/SKILL.md`
+
+Then it continues from "Last completed step". It does not redo finished
+work, and it does not re-ask an answered question.
+
+## Why the repo is the only memory
+
+Every fact a successor needs is a committed file. That is the whole design:
+sessions are disposable, the repo is not. It is also why status files are
+structured fields rather than prose — a cold session has to parse them in
+one read, without the context that made them obvious to write.
