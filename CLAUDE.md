@@ -36,7 +36,7 @@ context from this repo. Exact mechanics: [`docs/resume-protocol.md`](docs/resume
 
 | Role | Skill | Status file | Trigger |
 |------|-------|-------------|---------|
-| Build agent | [`skills/build-agent/SKILL.md`](skills/build-agent/SKILL.md) | [`STATUS/build.md`](STATUS/build.md) | Human issue/PR; comment on its `agent-question` issue |
+| Build agent | [`skills/build-agent/SKILL.md`](skills/build-agent/SKILL.md) | [`STATUS/build.md`](STATUS/build.md) | Issue labeled `ready-to-build`; comment on its `agent-question` issue |
 | Automated tester | [`skills/automated-tester/SKILL.md`](skills/automated-tester/SKILL.md) | [`STATUS/auto-test.md`](STATUS/auto-test.md) | PR labeled `ready-for-test` |
 | Manual tester | [`skills/manual-tester/SKILL.md`](skills/manual-tester/SKILL.md) | [`STATUS/manual-test.md`](STATUS/manual-test.md) | Cowork Dispatch / Scheduled Task (not a Routine) |
 

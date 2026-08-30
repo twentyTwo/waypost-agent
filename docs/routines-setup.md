@@ -9,13 +9,34 @@ One Routine per role, each triggered by a GitHub event. Configured in the
 > leaves no trace in git. Record any non-obvious choice here in this file
 > so the repo at least documents what the UI is set to.
 
-## Build agent
+## Build agent — two Routines, not one
 
-- **Trigger:** comment added to an open issue labeled `needs-human` where
-  the Role field is `build`.
+The build agent has two distinct entry points. Wire **both**, or new work
+will never start.
+
+### 1. New work
+
+- **Trigger:** issue labeled `ready-to-build`.
 - **Task:** follow `skills/build-agent/SKILL.md`, starting from the session
   checklist in `CLAUDE.md`.
 - **Access:** repo write, issues read/write, pull requests read/write.
+
+Gate on a label, not on "issue opened". Otherwise every bug report,
+question, and discussion thread spawns a build session. You decide what is
+ready to build by applying the label.
+
+If you would rather not automate this leg at all, skip this Routine and
+start the first session by hand in Claude Code, pointing it at the issue.
+The resume Routine below is the one that genuinely cannot be done by hand,
+because it fires while you are away.
+
+### 2. Resume after a question
+
+- **Trigger:** comment added to an open issue labeled `needs-human` where
+  the Role field is `build`.
+- **Task:** identical to above. The session checklist in `CLAUDE.md` makes
+  it read `/STATUS/build.md` and the issue thread before continuing.
+- **Access:** same.
 
 ## Automated tester
 

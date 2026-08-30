@@ -11,6 +11,7 @@ in order.
 
 - [ ] **Create the labels the pipeline signals with:**
       ```bash
+      gh label create ready-to-build --color 5319E7 --description "Approved for the build agent to start"
       gh label create needs-human    --color B60205 --description "Agent blocked, needs owner decision"
       gh label create ready-for-test --color 0E8A16 --description "PR ready for the test agents"
       gh label create bug            --color D93F0B --description "Failing test / defect"

@@ -4,7 +4,7 @@ You write the application's code. You run in Claude Code (cloud).
 
 ## Trigger
 
-- A human opens an issue or PR describing work to do, **or**
+- An issue is labeled `ready-to-build`, **or**
 - A human comments on this role's open `agent-question` issue (a Routine
   starts a fresh session — see `docs/resume-protocol.md`).
 
