@@ -1,4 +1,4 @@
-# Pipeline architecture
+# Waypost architecture
 
 Written for a human deciding whether to adopt this, not for an agent at
 session start.
@@ -38,8 +38,10 @@ normal way a session ends when the answer is not in the repo.
 
 ## Three ideas hold it together
 
-**The repo is the only memory.** Agents share no process and never message
-each other. Everything one needs to know about another's work is a
+**The repo is the only memory.** This is where the name comes from: a
+waypost is a marker left on a trail for a traveler you will never meet, and
+the marker is the entire conversation. Agents share no process and never
+message each other. Everything one needs to know about another's work is a
 committed file: `/STATUS/<role>.md` for state, `/qa-runs/` for results,
 labels for signals. Sessions are disposable; the repo is not.
 

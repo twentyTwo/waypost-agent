@@ -1,9 +1,10 @@
 # CLAUDE.md — read this first, every session
 
-This repository is the **shared memory and coordination surface** for a set
-of AI agent roles working on one software project. Agents do not talk to
-each other directly and do not share a process. Everything one agent needs
-to know about another's work is a file in this repo. A session that ends —
+This project runs on **Waypost**: this repository is the **shared memory
+and coordination surface** for a set of AI agent roles working on one
+software project. Agents do not talk to each other directly and do not
+share a process. Everything one agent needs to know about another's work
+is a file in this repo. A session that ends —
 for any reason — loses nothing, because nothing lived only in its context.
 
 ## The hard rule: agents never block waiting for a human

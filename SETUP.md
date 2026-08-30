@@ -1,7 +1,8 @@
 # SETUP.md — do this before any agent touches the repo
 
-You just created a repository from this template. None of the steps below
-can be pre-wired by the template — work through them once, in order.
+You just created a repository from the **Waypost Agent** template. None of
+the steps below can be pre-wired by the template — work through them once,
+in order.
 
 - [ ] **Fill in the Project Stack section in [`CLAUDE.md`](CLAUDE.md).**
       Language, framework, package manager, test runner, deploy target,
