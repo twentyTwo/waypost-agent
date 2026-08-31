@@ -76,6 +76,7 @@ Branch model:        trunk = main; feature branches feature/<name>
 
 ## Docs
 
+- [`docs/getting-started.md`](docs/getting-started.md) — the exact steps to set this up and use it
 - [`docs/pipeline-architecture.md`](docs/pipeline-architecture.md) — the whole system, with a diagram
 - [`docs/resume-protocol.md`](docs/resume-protocol.md) — ask-and-pause and resume, step by step
 - [`docs/routines-setup.md`](docs/routines-setup.md) — wiring the triggers (manual, in the UI)

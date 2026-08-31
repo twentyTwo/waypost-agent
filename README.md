@@ -31,11 +31,12 @@ disconnects, and a repo owner who is asleep.
 ## This repo contains no application code
 
 It is the scaffold. Click **Use this template**, then work through
-[`SETUP.md`](SETUP.md).
+[`docs/getting-started.md`](docs/getting-started.md).
 
 | | |
 |---|---|
-| [`SETUP.md`](SETUP.md) | what you must do manually, first |
+| [`docs/getting-started.md`](docs/getting-started.md) | **start here** — the exact steps, with commands |
+| [`SETUP.md`](SETUP.md) | the same setup as a bare checklist |
 | [`CLAUDE.md`](CLAUDE.md) | what every agent session reads before anything else |
 | [`docs/pipeline-architecture.md`](docs/pipeline-architecture.md) | how the whole thing fits together, with a diagram |
 | [`docs/resume-protocol.md`](docs/resume-protocol.md) | ask-and-pause and resume, step by step |

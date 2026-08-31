@@ -4,6 +4,9 @@ You just created a repository from the **Waypost Agent** template. None of
 the steps below can be pre-wired by the template — work through them once,
 in order.
 
+For the same steps with commands and the reasoning behind each,
+see [`docs/getting-started.md`](docs/getting-started.md).
+
 - [ ] **Fill in the Project Stack section in [`CLAUDE.md`](CLAUDE.md).**
       Language, framework, package manager, test runner, deploy target,
       conventions. Until this is filled in, the build agent will stop and
