@@ -52,12 +52,12 @@ this framework is hardcoded to these three. See
      ask-and-pause rather than guessing. Delete this comment when done. -->
 
 ```
-Application name:    <FILL IN>
-Language / runtime:  <FILL IN>
-Framework:           <FILL IN>
-Package manager:     <FILL IN>
-Test runner:         <FILL IN>   (Playwright assumed for web E2E)
-Deploy target:       <FILL IN>
+Application name:    My App
+Language / runtime:  TypeScript / Node 22
+Framework:           Next.js 15 (App Router)
+Package manager:     pnpm
+Test runner:         Playwright + Vitest
+Deploy target:       Vercel
 Branch model:        trunk = main; feature branches feature/<name>
 ```
 
